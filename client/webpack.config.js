@@ -1,12 +1,37 @@
 const path = require('path');
 const babiliPlugin = require('babili-webpack-plugin');
+const extractTextPlugin = require('extract-text-webpack-plugin');
+const optimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+
+const webpack = require('webpack');
+
+
 
 let plugins = []
+plugins.push(new extractTextPlugin('styles.css'));
+plugins.push(
+    new webpack.ProvidePlugin({
+        '$': 'jquery/dist/jquery.js',
+        'jQuery': 'jquery/dist/jquery.js'
+    })
+);
 
-process.env.NODE_ENV == "prod" ?
-    plugins.push(new babiliPlugin()) : false;
+if (process.env.NODE_ENV == "prod") {
+    
+    plugins.push(new babiliPlugin());
 
-console.log(plugins)
+    plugins.push(new webpack.optimize.ModuleConcatenationPlugin());
+
+    plugins.push(new optimizeCSSAssetsPlugin({
+        cssProcessor: require('cssnano'),
+        cssProcessorOptions: {
+            discardComments: {
+                removeAll: true
+            }
+        },
+        canPrint: true
+    }));
+}
 
 module.exports = {
     entry: './app-src/app.js',
@@ -26,24 +51,27 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                loader: 'style-loader!css-loader'
+                use: extractTextPlugin.extract({
+                    fallback: 'style-loader',
+                    use: 'css-loader'
+                })
             },
-            { 
-                test: /\.(woff|woff2)(\?v=\d+\.\d+\.\d+)?$/, 
-                loader: 'url-loader?limit=10000&mimetype=application/font-woff' 
+            {
+                test: /\.(woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
+                loader: 'url-loader?limit=10000&mimetype=application/font-woff'
             },
-            { 
-                test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, 
+            {
+                test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
                 loader: 'url-loader?limit=10000&mimetype=application/octet-stream'
             },
-            { 
-                test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, 
-                loader: 'file-loader' 
+            {
+                test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
+                loader: 'file-loader'
             },
-            { 
-                test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, 
-                loader: 'url-loader?limit=10000&mimetype=image/svg+xml' 
-            }            
+            {
+                test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+                loader: 'url-loader?limit=10000&mimetype=image/svg+xml'
+            }
         ]
     },
     plugins
